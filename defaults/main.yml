@@ -1,0 +1,8 @@
+---
+
+users_color_schema: '\[\033[01;35m\]'
+users_default_shell: /bin/bash
+
+# Lists of users to create and delete
+users: []
+users_deleted: []

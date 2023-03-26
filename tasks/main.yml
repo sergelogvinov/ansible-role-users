@@ -1,0 +1,57 @@
+---
+
+- name: prepare vim directories
+  become: yes
+  file:
+    path: /etc/vim
+    state: directory
+  tags: ['users']
+
+- name: Setup defaul vimrc
+  become: yes
+  template:
+    src: vimrc.j2
+    dest: /etc/vim/vimrc.local
+  tags: ['users']
+
+- name: Setup vimrc for root
+  become: yes
+  template:
+    src: root_vimrc.j2
+    dest: /root/.vimrc
+  tags: ['users']
+
+- name: Setup bashrc for root
+  become: yes
+  template:
+    src: root_bashrc.j2
+    dest: /root/.bashrc
+  tags: ['users']
+
+- name: Setup root vimrc
+  become: yes
+  copy:
+    content: ''
+    dest: /etc/skel/.vimrc
+  tags: ['users']
+
+- name: User creation
+  become: yes
+  user: name="{{ item.username }}"
+        group="{{ item.username }}"
+        groups="{{ item.groups | join(',') }}"
+        shell={{ item.shell if item.shell is defined else users_default_shell }}
+        password="{{ item.password if item.password is defined else '!' }}"
+        comment="{{ item.name }}"
+        uid="{{ item.uid | default(omit) }}"
+        createhome="{{'yes' if users_create_homedirs else 'no'}}"
+  with_items:
+    - "{{ users }}"
+  tags: ['users','configuration']
+
+- name: Deleted user removal
+  become: yes
+  user: name="{{ item.username }}" state=absent
+  with_items:
+    - "{{ users_deleted }}"
+  tags: ['users','configuration']
