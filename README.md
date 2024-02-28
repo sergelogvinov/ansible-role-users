@@ -23,7 +23,7 @@ server-1          ansible_host=1.2.3.1
 users:
   - username: developer
     name: "Developer account"
-    groups: ""
+    groups: [sudo, docker]
     uid: 1500
 
 users_deleted:
