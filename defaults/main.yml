@@ -5,10 +5,14 @@ users_default_shell: /bin/bash
 
 users_create_homedirs: true
 
+users_groups: []
+  # - name: sftponly
+
 # Lists of users to create and delete
 users: []
   # - username: debian
   #   groups: [games]
   #   sshkeys: https://github.com/sergelogvinov.keys
+  #   sshkeys_system: true
 
 users_deleted: []

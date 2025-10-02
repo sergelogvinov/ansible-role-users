@@ -1,46 +1,58 @@
 ---
 
 - name: prepare vim directories
-  become: yes
+  become: true
   file:
     path: /etc/vim
     state: directory
   tags: ['users']
 
-- name: Setup defaul vimrc
-  become: yes
+- name: Setup default vimrc
+  become: true
   template:
     src: vimrc.j2
     dest: /etc/vim/vimrc.local
   tags: ['users']
 
 - name: Setup vimrc for root
-  become: yes
+  become: true
   template:
     src: root_vimrc.j2
     dest: /root/.vimrc
   tags: ['users']
 
 - name: Setup bashrc for root
-  become: yes
+  become: true
   template:
     src: root_bashrc.j2
     dest: /root/.bashrc
   tags: ['users']
 
 - name: Setup root vimrc
-  become: yes
+  become: true
   copy:
     content: ''
     dest: /etc/skel/.vimrc
   tags: ['users']
 
+- name: Group creation
+  become: true
+  ansible.builtin.group:
+    name: "{{ item.name }}"
+    gid: "{{ item.gid | default(omit) }}"
+    gid_min: "{{ item.gid_min | default(omit) }}"
+    state: present
+  with_items:
+    - "{{ users_groups }}"
+  tags: ['users','configuration']
+
 - name: User creation
-  become: yes
-  user:
+  become: true
+  ansible.builtin.user:
     name: "{{ item.username }}"
     group: "users"
     groups: "{{ item.groups | join(',') }}"
+    home: "{{ item.home | default(omit) }}"
     shell: "{{ item.shell | default(users_default_shell) }}"
     password: "{{ item.password | default('!') }}"
     comment: "{{ item.name | default(item.username) }}"
@@ -51,19 +63,35 @@
   tags: ['users','configuration']
 
 - name: Add ssh keys
-  become: yes
+  become: true
   authorized_key:
     user: "{{ item.username }}"
     state: present
     key: "{{ item.sshkeys }}"
+    key_options: "{{ item.options | default(omit) }}"
     exclusive: true
-  when: item.sshkeys is defined
+  when: item.sshkeys is defined and not(item.sshkeys_system is defined and item.sshkeys_system)
+  with_items:
+    - "{{ users }}"
+  tags: ['users','configuration']
+
+- name: Add system ssh keys
+  become: true
+  authorized_key:
+    path: "/etc/ssh/authorized_keys/{{ item.username }}"
+    user: "{{ item.username }}"
+    state: present
+    key: "{{ item.sshkeys }}"
+    key_options: "{{ item.options | default(omit) }}"
+    exclusive: true
+    manage_dir: false
+  when: item.sshkeys is defined and (item.sshkeys_system is defined and item.sshkeys_system)
   with_items:
     - "{{ users }}"
   tags: ['users','configuration']
 
 - name: Deleted user removal
-  become: yes
+  become: true
   user: name="{{ item.username }}" state=absent
   with_items:
     - "{{ users_deleted }}"
